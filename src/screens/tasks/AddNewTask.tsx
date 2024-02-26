@@ -1,35 +1,96 @@
-import React, { useState } from 'react';
+import firestore from '@react-native-firebase/firestore';
+import { useEffect, useState } from 'react';
+import { PermissionsAndroid, Platform, View } from 'react-native';
+
+import ButtonComponent from '../../components/ButtonComponent';
 import Container from '../../components/Container';
-import TextComponent from '../../components/TextComponent';
-import { TaskModel } from '../../models/TaskModel';
-import SectionComponent from '../../components/SectionComponent';
-import InputComponent from '../../components/InputComponent';
-import { Button, View } from 'react-native';
 import DateTimePickerComponent from '../../components/DateTimePickerComponent';
+import DropdownPicker from '../../components/DropdownPicker';
+import InputComponent from '../../components/InputComponent';
 import RowComponent from '../../components/RowComponent';
+import SectionComponent from '../../components/SectionComponent';
 import SpaceComponent from '../../components/SpaceComponent';
+import TextComponent from '../../components/TextComponent';
+import UploadFileComponent from '../../components/UploadFileComponent';
+import { fontFamilies } from '../../constants/fontFamilies';
+import { SelectModel } from '../../models/SelectModel';
+import { Attachment, TaskModel } from '../../models/TaskModel';
 
 const initValue: TaskModel = {
   title: '',
   description: '',
-  dueDate: new Date(),
-  start: new Date(),
-  end: new Date(),
+  dueDate: undefined,
+  start: undefined,
+  end: undefined,
   uids: [],
-  fileUrls: [],
+  attachments: [],
 };
 
-const AddNewTask = ({ navigation }: any) => {
+const AddNewTask = ({ navigation, route }: any) => {
+  const { editable, task }: { editable: boolean; task?: TaskModel } =
+    route.params;
   const [taskDetail, setTaskDetail] = useState<TaskModel>(initValue);
+  const [usersSelect, setUsersSelect] = useState<SelectModel[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
 
-  const handleChangeValue = (id: string, value: string | Date) => {
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+      ]).then((res) => console.log(res));
+    }
+  }, []);
+
+  useEffect(() => {
+    handleGetAllUser();
+  }, []);
+
+  const handleGetAllUser = async () => {
+    await firestore()
+      .collection('users')
+      .get()
+      .then((snap) => {
+        if (snap.empty) {
+          console.log('Users data not found');
+        } else {
+          const items: SelectModel[] = [];
+
+          snap.forEach((item) => {
+            items.push({
+              label: item.data().name,
+              value: item.id,
+            });
+          });
+          setUsersSelect(items);
+        }
+      })
+      .catch((error) => {
+        console.log(`can not get user, ${error.message}`);
+      });
+  };
+
+  const handleChangeValue = (id: string, value: string | string[] | Date) => {
     const item: any = { ...taskDetail };
     item[`${id}`] = value;
     setTaskDetail(item);
   };
 
   const handleAddNewTask = async () => {
-    console.log('first');
+    const data = {
+      ...taskDetail,
+      attachments,
+    };
+
+    await firestore()
+      .collection('tasks')
+      .add(data)
+      .then(() => {
+        console.log('New task added!!');
+        navigation.goBack();
+      })
+      .catch((error) => console.log(error));
   };
 
   return (
@@ -77,9 +138,47 @@ const AddNewTask = ({ navigation }: any) => {
             />
           </View>
         </RowComponent>
+
+        <DropdownPicker
+          selected={taskDetail.uids}
+          items={usersSelect}
+          onSelect={(val) => handleChangeValue('uids', val)}
+          title="Members"
+          multiple
+        />
+        <View>
+          <RowComponent
+            styles={{
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+            }}
+          >
+            <TextComponent
+              text="Attachments"
+              flex={0}
+              font={fontFamilies.bold}
+              size={16}
+            />
+            <SpaceComponent width={8} />
+            <UploadFileComponent
+              onUpload={(file) =>
+                file && setAttachments([...attachments, file])
+              }
+            />
+          </RowComponent>
+          {attachments.length > 0 &&
+            attachments.map((item, index) => (
+              <RowComponent
+                key={`attachment${index}`}
+                styles={{ paddingVertical: 12 }}
+              >
+                <TextComponent text={item.name ?? ''} />
+              </RowComponent>
+            ))}
+        </View>
       </SectionComponent>
       <SectionComponent>
-        <Button title="Save" onPress={handleAddNewTask} />
+        <ButtonComponent text="Save" onPress={handleAddNewTask} />
       </SectionComponent>
     </Container>
   );

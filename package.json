@@ -7,9 +7,16 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "buildAAB": "npx react-native build-android --mode=release",
+    "buildAPK": "npm run android -- --mode=release"
   },
   "dependencies": {
+    "@miblanchard/react-native-slider": "^2.3.1",
+    "@react-native-firebase/app": "^18.9.0",
+    "@react-native-firebase/auth": "^18.9.0",
+    "@react-native-firebase/firestore": "^18.9.0",
+    "@react-native-firebase/storage": "^18.9.0",
     "@react-navigation/native": "^6.1.10",
     "@react-navigation/native-stack": "^6.9.18",
     "iconsax-react-native": "^0.0.8",
@@ -17,11 +24,13 @@
     "react-native": "0.73.4",
     "react-native-circular-progress-indicator": "^4.4.2",
     "react-native-date-picker": "^4.3.6",
+    "react-native-document-picker": "^9.1.1",
     "react-native-reanimated": "^3.7.1",
     "react-native-safe-area-context": "^4.9.0",
     "react-native-screens": "^3.29.0",
     "react-native-svg": "^14.1.0",
-    "react-native-vector-icons": "^10.0.3"
+    "react-native-vector-icons": "^10.0.3",
+    "rn-fetch-blob": "^0.12.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

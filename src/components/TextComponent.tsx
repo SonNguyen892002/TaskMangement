@@ -1,5 +1,5 @@
-import { View, Text, StyleProp, TextStyle } from 'react-native';
-import React, { ReactNode } from 'react';
+import { View, Text, StyleProp, TextStyle, Platform } from 'react-native';
+import { ReactNode } from 'react';
 import { globalStyles } from '../styles/globalStyles';
 import { fontFamilies } from '../constants/fontFamilies';
 import { colors } from '../constants/colors';
@@ -11,19 +11,31 @@ interface Props {
   color?: string;
   flex?: number;
   styles?: StyleProp<TextStyle>;
+  line?: number;
 }
 
 const TextComponent = (props: Props) => {
-  const { text, size, font, color, flex, styles } = props;
+  const { text, size, font, color, flex, styles, line } = props;
+  const weight: any =
+    Platform.OS === 'ios'
+      ? font
+        ? {
+            fontWeight: font,
+          }
+        : { fontWeight: fontFamilies.regular }
+      : {};
   return (
     <Text
+      numberOfLines={line}
       style={[
         globalStyles.text,
+        weight,
         {
           flex: flex ?? 1,
           fontFamily: font ?? fontFamilies.regular,
           fontSize: size ?? 14,
-          color: color ?? colors.text,
+          top: 2,
+          color: color ?? colors.desc,
         },
         styles,
       ]}

@@ -8,18 +8,18 @@ import { ArrowDown2 } from 'iconsax-react-native';
 import { globalStyles } from '../styles/globalStyles';
 import SpaceComponent from './SpaceComponent';
 import DatePicker from 'react-native-date-picker';
+import { Timestamp } from 'react-native-reanimated/lib/typescript/reanimated2/commonTypes';
 
 interface Props {
   type?: 'date' | 'time' | 'datetime';
   title?: string;
   placeholder?: string;
-  selected?: Date;
+  selected?: any;
   onSelect: (val: Date) => void;
 }
 
 const DateTimePickerComponent = (props: Props) => {
   const { selected, onSelect, placeholder, title, type } = props;
-
   const [isVisibleModalDateTime, setIsVisibleModalDateTime] = useState(false);
   const [date, setDate] = useState(selected ?? new Date());
   return (
@@ -79,24 +79,21 @@ const DateTimePickerComponent = (props: Props) => {
               />
             </View>
             <SpaceComponent height={20} />
-            <RowComponent styles={{ justifyContent: 'space-evenly' }}>
-              <Button
-                title="Confirm"
-                onPress={() => {
-                  onSelect(date);
-                  setIsVisibleModalDateTime(false);
-                }}
-              />
-              <Button
-                title="Close"
-                onPress={() => setIsVisibleModalDateTime(false)}
-              />
-            </RowComponent>
+            <Button
+              title="Comfirm"
+              onPress={() => {
+                onSelect(date);
+                setIsVisibleModalDateTime(false);
+              }}
+            />
+            <Button
+              title="Close"
+              onPress={() => setIsVisibleModalDateTime(false)}
+            />
           </View>
         </View>
       </Modal>
     </>
   );
 };
-
 export default DateTimePickerComponent;

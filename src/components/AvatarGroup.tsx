@@ -1,13 +1,51 @@
-import React from 'react';
-import RowComponent from './RowComponent';
-import { Image, View } from 'react-native';
-import TextComponent from './TextComponent';
+import React, { useEffect, useState } from 'react';
+import { Image, Text, View } from 'react-native';
 import { colors } from '../constants/colors';
 import { fontFamilies } from '../constants/fontFamilies';
+import RowComponent from './RowComponent';
+import TextComponent from './TextComponent';
+import firestore from '@react-native-firebase/firestore';
+import { globalStyles } from '../styles/globalStyles';
+import AvatarComponent from './AvatarComponent';
 
-const AvatarGroup = () => {
-  const uidsLength = 10;
-  const imageUrl = `https://gamek.mediacdn.vn/133514250583805952/2022/5/18/photo-1-16528608926331302726659.jpg`;
+interface Props {
+  uids: string[];
+}
+const AvatarGroup = (props: Props) => {
+  const { uids } = props;
+
+  const [usersName, setUsersName] = useState<
+    {
+      name: string;
+      imgUrl: string;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    getUserAvatar();
+  }, [uids]);
+
+  const getUserAvatar = async () => {
+    const items: any = [...usersName];
+    uids.forEach(async (id) => {
+      await firestore()
+        .doc(`users/${id}`)
+        .get()
+        .then((snap: any) => {
+          if (snap.exists) {
+            items.push({
+              name: snap.data().name,
+              imgUrl: snap.data().imgUrl ?? '',
+            });
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    });
+    setUsersName(items);
+  };
+
   const imageStyle = {
     width: 32,
     height: 32,
@@ -15,20 +53,15 @@ const AvatarGroup = () => {
     borderWidth: 2,
     borderColor: colors.white,
   };
+
   return (
     <RowComponent styles={{ justifyContent: 'flex-start' }}>
-      {Array.from({ length: uidsLength }).map(
+      {uids.map(
         (item, index) =>
-          index < 3 && (
-            <Image
-              source={{ uri: imageUrl }}
-              key={`image${index}`}
-              style={[imageStyle, { marginLeft: index > 0 ? -10 : 0 }]}
-            />
-          )
+          index < 3 && <AvatarComponent uid={item} index={index} key={index} />
       )}
 
-      {uidsLength > 5 && (
+      {uids.length > 3 && (
         <View
           style={[
             imageStyle,
@@ -47,7 +80,7 @@ const AvatarGroup = () => {
               lineHeight: 19,
             }}
             font={fontFamilies.semiBold}
-            text={`+${uidsLength - 3 > 9 ? 9 : uidsLength - 3}`}
+            text={`+${uids.length - 3 > 9 ? 9 : uids.length - 3}`}
           />
         </View>
       )}

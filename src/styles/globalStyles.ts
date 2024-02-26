@@ -6,7 +6,6 @@ export const globalStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bgColor,
-    paddingTop: 20,
   },
   row: {
     flexDirection: 'row',
@@ -14,7 +13,7 @@ export const globalStyles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: fontFamilies.regular,
     color: colors.text,
   },
@@ -22,11 +21,14 @@ export const globalStyles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 20,
   },
+  documentImg: {
+    marginHorizontal: 4,
+  },
   inputContainer: {
     backgroundColor: colors.gray,
     borderRadius: 12,
     paddingHorizontal: Platform.OS === 'ios' ? 12 : 10,
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   tag: {
     paddingHorizontal: 12,
