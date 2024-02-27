@@ -156,7 +156,12 @@ const DropdownPicker = (props: Props) => {
                   />
                 </View>
                 <TouchableOpacity onPress={() => setIsVisible(false)}>
-                  <TextComponent text="Cancel" color="coral" flex={0} />
+                  <TextComponent
+                    styles={{ marginBottom: 16 }}
+                    text="Cancel"
+                    color="coral"
+                    flex={0}
+                  />
                 </TouchableOpacity>
               </RowComponent>
             }

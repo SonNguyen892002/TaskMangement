@@ -64,6 +64,7 @@ const DateTimePickerComponent = (props: Props) => {
             style={{
               margin: 20,
               width: '90%',
+              alignItems: 'center',
               backgroundColor: colors.white,
               padding: 20,
               borderRadius: 20,
@@ -79,17 +80,20 @@ const DateTimePickerComponent = (props: Props) => {
               />
             </View>
             <SpaceComponent height={20} />
-            <Button
-              title="Comfirm"
-              onPress={() => {
-                onSelect(date);
-                setIsVisibleModalDateTime(false);
-              }}
-            />
-            <Button
-              title="Close"
-              onPress={() => setIsVisibleModalDateTime(false)}
-            />
+            <RowComponent justify="space-around">
+              <Button
+                title="Confirm"
+                onPress={() => {
+                  onSelect(date);
+                  setIsVisibleModalDateTime(false);
+                }}
+              />
+              <SpaceComponent width={50} />
+              <Button
+                title="Close"
+                onPress={() => setIsVisibleModalDateTime(false)}
+              />
+            </RowComponent>
           </View>
         </View>
       </Modal>
