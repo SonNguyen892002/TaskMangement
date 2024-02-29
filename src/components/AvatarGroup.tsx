@@ -34,7 +34,7 @@ const AvatarGroup = (props: Props) => {
         .then((snap: any) => {
           if (snap.exists) {
             items.push({
-              name: snap.data().name,
+              name: snap.data().displayName,
               imgUrl: snap.data().imgUrl ?? '',
             });
           }

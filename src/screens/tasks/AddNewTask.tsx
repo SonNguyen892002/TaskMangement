@@ -1,6 +1,6 @@
 import firestore from '@react-native-firebase/firestore';
 import { useEffect, useState } from 'react';
-import { PermissionsAndroid, Platform, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import ButtonComponent from '../../components/ButtonComponent';
 import Container from '../../components/Container';
@@ -15,6 +15,7 @@ import UploadFileComponent from '../../components/UploadFileComponent';
 import { fontFamilies } from '../../constants/fontFamilies';
 import { SelectModel } from '../../models/SelectModel';
 import { Attachment, TaskModel } from '../../models/TaskModel';
+import auth from '@react-native-firebase/auth';
 
 const initValue: TaskModel = {
   title: '',
@@ -24,6 +25,9 @@ const initValue: TaskModel = {
   end: undefined,
   uids: [],
   attachments: [],
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+  isUrgent: false,
 };
 
 const AddNewTask = ({ navigation, route }: any) => {
@@ -33,19 +37,29 @@ const AddNewTask = ({ navigation, route }: any) => {
   const [usersSelect, setUsersSelect] = useState<SelectModel[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-      ]).then((res) => console.log(res));
-    }
-  }, []);
+  const user = auth().currentUser;
 
   useEffect(() => {
     handleGetAllUser();
   }, []);
+
+  useEffect(() => {
+    user && setTaskDetail({ ...taskDetail, uids: [user.uid] });
+  }, [user]);
+
+  useEffect(() => {
+    user && setTaskDetail({ ...taskDetail, uids: [user.uid] });
+  }, [user]);
+
+  useEffect(() => {
+    task &&
+      setTaskDetail({
+        ...taskDetail,
+        title: task.title,
+        description: task.description,
+        uids: task.uids,
+      });
+  }, [task]);
 
   const handleGetAllUser = async () => {
     await firestore()
@@ -59,7 +73,7 @@ const AddNewTask = ({ navigation, route }: any) => {
 
           snap.forEach((item) => {
             items.push({
-              label: item.data().name,
+              label: item.data().displayName,
               value: item.id,
             });
           });
@@ -78,19 +92,35 @@ const AddNewTask = ({ navigation, route }: any) => {
   };
 
   const handleAddNewTask = async () => {
-    const data = {
-      ...taskDetail,
-      attachments,
-    };
+    if (user) {
+      const data = {
+        ...taskDetail,
+        attachments,
+        createdAt: task ? task.createdAt : Date.now(),
+        updatedAt: Date.now(),
+      };
 
-    await firestore()
-      .collection('tasks')
-      .add(data)
-      .then(() => {
-        console.log('New task added!!');
-        navigation.goBack();
-      })
-      .catch((error) => console.log(error));
+      if (task) {
+        await firestore()
+          .doc(`tasks/${task.id}`)
+          .update(data)
+          .then(() => {
+            console.log('Task updated!!');
+            navigation.goBack();
+          });
+      } else {
+        await firestore()
+          .collection('tasks')
+          .add(data)
+          .then(() => {
+            console.log('New task added!!');
+            navigation.goBack();
+          })
+          .catch((error) => console.log(error));
+      }
+    } else {
+      Alert.alert('You not login!!!');
+    }
   };
 
   return (
@@ -178,7 +208,10 @@ const AddNewTask = ({ navigation, route }: any) => {
         </View>
       </SectionComponent>
       <SectionComponent>
-        <ButtonComponent text="Save" onPress={handleAddNewTask} />
+        <ButtonComponent
+          text={task ? 'Update' : 'Save'}
+          onPress={handleAddNewTask}
+        />
       </SectionComponent>
     </Container>
   );

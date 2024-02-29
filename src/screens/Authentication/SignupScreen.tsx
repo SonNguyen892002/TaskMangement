@@ -1,4 +1,4 @@
-import { View, Text } from 'react-native';
+import { View, Text, PermissionsAndroid, Platform } from 'react-native';
 import { useEffect, useState } from 'react';
 import Container from '../../components/Container';
 import SectionComponent from '../../components/SectionComponent';
@@ -20,6 +20,17 @@ const SignUpScreen = ({ navigation }: any) => {
   // const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState('');
+
+  // Get permission
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+      ]).then((res) => console.log(res));
+    }
+  }, []);
 
   useEffect(() => {
     if (email) {

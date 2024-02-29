@@ -1,3 +1,5 @@
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import {
   Add,
   Edit2,
@@ -17,33 +19,49 @@ import ProgressBarComponent from '../../components/ProgressBarComponent';
 import RowComponent from '../../components/RowComponent';
 import SectionComponent from '../../components/SectionComponent';
 import SpaceComponent from '../../components/SpaceComponent';
-import TagComponent from '../../components/TagComponent';
 import TextComponent from '../../components/TextComponent';
 import TitleComponent from '../../components/TitleComponent';
 import { colors } from '../../constants/colors';
 import { fontFamilies } from '../../constants/fontFamilies';
-import { globalStyles } from '../../styles/globalStyles';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 import { TaskModel } from '../../models/TaskModel';
+import { globalStyles } from '../../styles/globalStyles';
 import { HandleDateTime } from '../../util/handleDateTime';
+import TotalTasks from './components/TotalTask';
+// import {HandleNotification} from '../../utils/handleNotification';
+// import {NotificationModel} from '../../models/NotificationModel';
+// import messaging from '@react-native-firebase/messaging';
+
+const date = new Date();
 
 const HomeScreen = ({ navigation }: any) => {
   const user = auth().currentUser;
   const [isLoading, setIsLoading] = useState(false);
   const [tasks, setTasks] = useState<TaskModel[]>([]);
-
+  const [urgentTask, setUrgentTask] = useState<TaskModel[]>([]);
   useEffect(() => {
-    getNewTasks();
+    getTasks();
   }, []);
 
-  const getNewTasks = () => {
+  useEffect(() => {
+    if (tasks.length > 0) {
+      const items = tasks.filter((element) => element.isUrgent);
+
+      setUrgentTask(items);
+    }
+  }, [tasks]);
+
+  const handleMoveToTaskDetail = (id?: string, color?: string) =>
+    navigation.navigate('TaskDetail', {
+      id,
+      color,
+    });
+
+  const getTasks = () => {
     setIsLoading(true);
 
     firestore()
       .collection('tasks')
-      .orderBy('dueDate')
-      .limitToLast(3)
+      .where('uids', 'array-contains', user?.uid)
       .onSnapshot((snap) => {
         if (snap.empty) {
           console.log(`tasks not found!`);
@@ -55,17 +73,16 @@ const HomeScreen = ({ navigation }: any) => {
               ...item.data(),
             });
           });
-
-          setIsLoading(false);
-          setTasks(items);
+          setTasks(items.sort((a, b) => b.createdAt - a.createdAt));
         }
+        setIsLoading(false);
       });
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bgColor }}>
       <Container isScroll>
-        {/* Header section */}
+        {/* Header */}
         <SectionComponent>
           <RowComponent justify="space-between">
             <Element4 size={24} color={colors.desc} />
@@ -75,7 +92,7 @@ const HomeScreen = ({ navigation }: any) => {
         <SectionComponent>
           <RowComponent>
             <View style={{ flex: 1 }}>
-              <TextComponent text={`Hi, ${user?.email}`} />
+              <TextComponent text={`Hi, ${user?.email?.split('@')[0]}`} />
               <TitleComponent text="Be productive today" />
             </View>
             <TouchableOpacity onPress={async () => auth().signOut()}>
@@ -83,52 +100,38 @@ const HomeScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           </RowComponent>
         </SectionComponent>
+
+        {/* Search button */}
         <SectionComponent>
           <RowComponent
             styles={[globalStyles.inputContainer]}
-            onPress={() => navigation.navigate('Search')}
+            onPress={() => navigation.navigate('ListTasks')}
           >
             <TextComponent color="#69686f" text="Search" />
             <SearchNormal1 size={20} color={colors.desc} />
           </RowComponent>
         </SectionComponent>
 
-        {/* Task progress section */}
-        <SectionComponent>
-          <CardComponent>
-            <RowComponent>
-              <View style={{ flex: 1 }}>
-                <TitleComponent text="Task progress" />
-                <TextComponent text="30/48 task done" />
-                <SpaceComponent height={20} />
-                <RowComponent justify="flex-start">
-                  <TagComponent
-                    text="March 22"
-                    onPress={() => console.log('first')}
-                  />
-                </RowComponent>
-              </View>
-              <View>
-                <CircularComponent value={80} />
-              </View>
-            </RowComponent>
-          </CardComponent>
-        </SectionComponent>
+        {/* Progress */}
+        <TotalTasks />
 
         {/* Card section */}
         {isLoading ? (
           <ActivityIndicator />
         ) : tasks.length > 0 ? (
           <SectionComponent>
+            <RowComponent
+              onPress={() => navigation.navigate('ListTasks')}
+              styles={{ paddingVertical: 16, justifyContent: 'flex-end' }}
+            >
+              <TextComponent text="View all" flex={0} />
+            </RowComponent>
             <RowComponent styles={{ alignItems: 'flex-start' }}>
-              {/* Task 1 */}
               <View style={{ flex: 1 }}>
                 {tasks[0] && (
                   <CardImageComponent
                     onPress={() =>
-                      navigation.navigate('TaskDetail', {
-                        id: tasks[0].id,
-                      })
+                      handleMoveToTaskDetail(tasks[0].id as string)
                     }
                   >
                     <TouchableOpacity
@@ -173,14 +176,13 @@ const HomeScreen = ({ navigation }: any) => {
               </View>
               <SpaceComponent width={16} />
               <View style={{ flex: 1 }}>
-                {/* Task 2 */}
                 {tasks[1] && (
                   <CardImageComponent
                     onPress={() =>
-                      navigation.navigate('TaskDetail', {
-                        id: tasks[1].id,
-                        color: 'rgba(33, 150, 243, 0.9)',
-                      })
+                      handleMoveToTaskDetail(
+                        tasks[1].id as string,
+                        'rgba(33, 150, 243, 0.9)'
+                      )
                     }
                     color="rgba(33, 150, 243, 0.9)"
                   >
@@ -197,25 +199,26 @@ const HomeScreen = ({ navigation }: any) => {
                     </TouchableOpacity>
                     <TitleComponent text={tasks[1].title} size={18} />
                     {tasks[1].uids && <AvatarGroup uids={tasks[1].uids} />}
-                    {tasks[1].progress && (
+                    {tasks[1].progress ? (
                       <ProgressBarComponent
                         percent={`${Math.floor(tasks[1].progress * 100)}%`}
                         color="#A2F068"
                       />
+                    ) : (
+                      <></>
                     )}
                   </CardImageComponent>
                 )}
 
                 <SpaceComponent height={16} />
 
-                {/* Task 3 */}
                 {tasks[2] && (
                   <CardImageComponent
                     onPress={() =>
-                      navigation.navigate('TaskDetail', {
-                        id: tasks[2].id,
-                        color: 'rgba(18, 181, 22, 0.9)',
-                      })
+                      handleMoveToTaskDetail(
+                        tasks[2].id as string,
+                        'rgba(18, 181, 22, 0.9)'
+                      )
                     }
                     color="rgba(18, 181, 22, 0.9)"
                   >
@@ -231,7 +234,11 @@ const HomeScreen = ({ navigation }: any) => {
                       <Edit2 size={20} color={colors.white} />
                     </TouchableOpacity>
                     <TitleComponent text={tasks[2].title} />
-                    <TextComponent text={tasks[2].description} size={13} />
+                    <TextComponent
+                      line={3}
+                      text={tasks[2].description}
+                      size={13}
+                    />
                   </CardImageComponent>
                 )}
               </View>
@@ -240,7 +247,8 @@ const HomeScreen = ({ navigation }: any) => {
         ) : (
           <></>
         )}
-        {/* Urgent task section */}
+
+        {/* Urgent task */}
         <SectionComponent>
           <TitleComponent
             flex={1}
@@ -248,22 +256,37 @@ const HomeScreen = ({ navigation }: any) => {
             size={21}
             text="Urgents tasks"
           />
-          <CardComponent>
-            <RowComponent>
-              <CircularComponent value={40} radius={36} />
-              <View
-                style={{ flex: 1, justifyContent: 'center', paddingLeft: 12 }}
+          {urgentTask.length > 0 &&
+            urgentTask.map((item) => (
+              <CardComponent
+                onPress={() => handleMoveToTaskDetail(item.id)}
+                styles={{
+                  marginBottom: 12,
+                }}
+                key={`urgentTask${item.id}`}
               >
-                <TextComponent text="Title of task" />
-              </View>
-            </RowComponent>
-          </CardComponent>
+                <RowComponent>
+                  <CircularComponent
+                    value={item.progress ? item.progress * 100 : 0}
+                    radius={36}
+                  />
+                  <View
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      paddingLeft: 12,
+                    }}
+                  >
+                    <TextComponent text={item.title} />
+                  </View>
+                </RowComponent>
+              </CardComponent>
+            ))}
         </SectionComponent>
       </Container>
 
       <SpaceComponent height={50} />
-
-      {/* Add new task section */}
+      {/* Add new task button */}
       <View
         style={{
           position: 'absolute',
@@ -286,7 +309,7 @@ const HomeScreen = ({ navigation }: any) => {
           style={[
             globalStyles.row,
             {
-              backgroundColor: 'coral',
+              backgroundColor: colors.blue,
               padding: 10,
               borderRadius: 100,
               width: '80%',

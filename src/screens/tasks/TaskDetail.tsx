@@ -6,6 +6,7 @@ import {
   CalendarEdit,
   Clock,
   TickCircle,
+  TickSquare,
 } from 'iconsax-react-native';
 import { useEffect, useState } from 'react';
 import {
@@ -39,6 +40,7 @@ const TaskDetail = ({ navigation, route }: any) => {
   const [subTask, setSubTask] = useState<SubTask[]>([]);
   const [isChange, setIsChange] = useState(false);
   const [isVisibleModalSubtask, setIsVisibleModalSubtask] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
 
   useEffect(() => {
     getTaskDetail();
@@ -48,18 +50,14 @@ const TaskDetail = ({ navigation, route }: any) => {
   useEffect(() => {
     if (taskDetail) {
       setProgress(taskDetail.progress ?? 0);
-      if (taskDetail.attachments != undefined) {
-        setAttachments(taskDetail.attachments);
-      }
+      setAttachments(taskDetail.attachments);
+      setIsUrgent(taskDetail.isUrgent);
     }
   }, [taskDetail]);
 
   useEffect(() => {
     if (attachments) {
-      if (
-        progress !== taskDetail?.progress ||
-        attachments !== taskDetail.attachments
-      ) {
+      if (attachments !== taskDetail?.attachments) {
         setIsChange(true);
       } else {
         setIsChange(false);
@@ -75,6 +73,13 @@ const TaskDetail = ({ navigation, route }: any) => {
       setProgress(completedPercent);
     }
   }, [subTask]);
+
+  const handleUpdateUrgentState = () => {
+    firestore().doc(`tasks/${id}`).update({
+      isUrgent: !isUrgent,
+      updatedAt: Date.now(),
+    });
+  };
 
   const getTaskDetail = () => [
     firestore()
@@ -133,6 +138,31 @@ const TaskDetail = ({ navigation, route }: any) => {
     }
   };
 
+  const handleDeleteTask = () => {
+    Alert.alert('Confirm', 'Are you sure want to delete this task?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+        onPress: () => console.log('cancel'),
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await firestore()
+            .doc(`tasks/${id}`)
+            .delete()
+            .then(() => {
+              navigation.goBack();
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        },
+      },
+    ]);
+  };
+
   return taskDetail ? (
     <>
       <ScrollView style={{ flex: 1, backgroundColor: colors.bgColor }}>
@@ -154,7 +184,12 @@ const TaskDetail = ({ navigation, route }: any) => {
                 style={{ marginTop: -8, marginRight: 12 }}
               />
             </TouchableOpacity>
-            <TitleComponent flex={1} text={taskDetail.title} size={22} />
+            <TitleComponent
+              line={1}
+              flex={1}
+              text={taskDetail.title}
+              size={22}
+            />
           </RowComponent>
           <View style={{ marginTop: 20 }}>
             <TextComponent text="Due date" />
@@ -229,6 +264,24 @@ const TaskDetail = ({ navigation, route }: any) => {
               styles={{ textAlign: 'justify' }}
             />
           </CardComponent>
+        </SectionComponent>
+
+        {/* Update urgent state button */}
+        <SectionComponent>
+          <RowComponent onPress={handleUpdateUrgentState}>
+            <TickSquare
+              variant={isUrgent ? 'Bold' : 'Outline'}
+              size={24}
+              color={colors.white}
+            />
+            <SpaceComponent width={8} />
+            <TextComponent
+              flex={1}
+              text={`Is Urgent`}
+              font={fontFamilies.bold}
+              size={18}
+            />
+          </RowComponent>
         </SectionComponent>
 
         {/* Task upload file */}
@@ -349,6 +402,12 @@ const TaskDetail = ({ navigation, route }: any) => {
                 </RowComponent>
               </CardComponent>
             ))}
+        </SectionComponent>
+
+        <SectionComponent>
+          <RowComponent justify="center" onPress={handleDeleteTask}>
+            <TextComponent text="Delete task" color="coral" flex={0} />
+          </RowComponent>
         </SectionComponent>
       </ScrollView>
       {isChange && (

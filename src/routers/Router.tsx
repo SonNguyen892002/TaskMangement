@@ -7,6 +7,7 @@ import auth from '@react-native-firebase/auth';
 import LoginScreen from '../screens/Authentication/LoginScreen';
 import SignUpScreen from '../screens/Authentication/SignupScreen';
 import TaskDetail from '../screens/tasks/TaskDetail';
+import ListTasks from '../screens/tasks/ListTask';
 
 const Router = () => {
   const [isLogin, setIsLogin] = useState(false);
@@ -33,6 +34,7 @@ const Router = () => {
       <Stack.Screen name="AddNewTask" component={AddNewTask} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="TaskDetail" component={TaskDetail} />
+      <Stack.Screen name="ListTasks" component={ListTasks} />
     </Stack.Navigator>
   );
 
